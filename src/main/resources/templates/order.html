@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>订单管理</title>
+    <link rel="stylesheet" th:href="@{/iview/iview.css}">
+    <script th:src="@{/libs/jquery-3.2.1.min.js}" type="text/javascript"></script>
+    <script th:src="@{/libs/vue.min.js}" type="text/javascript"></script>
+    <script th:src="@{/layer/layer.js}" type="text/javascript"></script>
+    <script th:src="@{/iview/iview.min.js}" type="text/javascript"></script>
+    <script th:src="@{/common.js}" type="text/javascript"></script>
+    <style type="text/css">
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <div style="margin-bottom: 6px;margin: 30px">
+        <template>
+            <Input class = "ivu-input" v-model="keyword" placeholder="完成操作请输入秘钥" style="width: 200px" />
+            <Input class = "ivu-input" v-model="orderNum" placeholder="订单号" style="width: 150px" />
+            <Input class = "ivu-input" v-model="status" placeholder="订单状态:0待领取 2已完成" style="width: 150px" />
+            <Input class = "ivu-input" v-model="nickName" placeholder="用户昵称" style="width: 150px" />
+            <i-button type="query"  @click="list()">查询</i-button>
+        </template>
+    </div>
+    <hr>
+    <div style="margin-bottom: 6px;margin: 30px">
+        <template>
+            <i-table border :content="self" :columns="tableTitle" :data="orderData"></i-table>
+        </template>
+    </div>
+</div>
+<script type="text/javascript">
+
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            content: '',
+            pageIndex: 1,
+            pageSize: 500,
+            orderData: [],
+            orderNum:null,
+            status:null,
+            nickName:null,
+            keyword:null,
+            tableTitle: [{
+                key: "nickName",
+                title: "姓名"
+            }, {
+                key: "orderNum",
+                title: "订单号"
+            }, {
+                key: "goodsName",
+                title: "商品名称"
+            },  {
+                key: "description",
+                title: "商品描述"
+            },{
+                key: "createDate",
+                title: "下单时间"
+            }, {
+                    key: "completeDate",
+                    title: "完成时间"
+                },
+                {
+                    key: "statusName",
+                    title: "当前状态"
+                },{
+                title: '操作',
+                key: 'action',
+                width: 300,
+                align: 'left',
+                render: function (h, params) {
+                    console.log(params)
+                    var functionList = [];
+                    var complete = h('Button', {
+                        props: {
+                            type: 'primary',
+                            size: 'small',
+                            icon: 'ios-play'
+                        },
+                        style: {
+                            marginRight: '8px'
+                        },
+                        on: {
+                            click: function () {
+                                vm.complete(params.row.id);
+                            }
+                        }
+                    }, '完成');
+                    functionList.push(complete);
+                    // 返回方法集合
+                    return h('div', functionList);
+                }
+            }]
+
+        },
+        methods: {
+            //任务列表(自行实现分页)
+            list: function () {
+                $.ajax({
+                    url: "../manager/orders",
+                    type: "get",
+                    data: {"pageIndex": this.pageIndex, 'pageSize': this.pageSize,"orderNum":this.orderNum,"status":this.status,"nickName":this.nickName},
+                    success: function (result) {
+                        console.log(result)
+                        vm.orderData = result.result;
+                    }
+                });
+            },
+
+            //完成
+            complete: function (orderId) {
+                var that = this;
+                if(!that.keyword){
+                    top.alert("请输入秘钥");
+                    return;
+                }
+                top.layer.confirm('确定要完成订单吗？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.ajax({
+                        url: "../manager/auth/complete?keyword="+that.keyword,
+                        type: "post",
+                        data: JSON.stringify({"id":orderId}),
+                        contentType:'application/json;charset=utf-8',
+                        success: function (result) {
+                            if (result) {
+                                top.layer.msg('完成', {icon: 1});
+                                window.setTimeout(that.list(), 1500);
+                            }
+                        }
+                    });
+                }, function () {
+
+                });
+            }
+        },
+        created: function () {
+            this.list();
+        }
+    })
+
+</script>
+</body>
+</html>

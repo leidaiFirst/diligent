@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: diligent
+  thymeleaf:
+    cache: false
+  jackson:
+    default-property-inclusion: non_empty
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/diligent?useUnicode=true&characterEncoding=utf8&autoReconnect=true
+    username: root
+    password: root
+
+server:
+  port: 8082
+
+mybatis:
+  mapperLocations: classpath:mapper/*.xml
+
+management:
+  endpoint:
+    prometheus:
+      enabled: true
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: ["health","prometheus"]
+  metrics:
+    export:
+      prometheus:
+        enabled: true

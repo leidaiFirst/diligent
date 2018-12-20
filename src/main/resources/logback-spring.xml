@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+
+    <property name="logDir" value="/var/log/dl"/>
+    <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="application"/>
+    <conversionRule conversionWord="ip" converterClass="com.dl.diligent.config.LogIpConfig"/>
+
+    <!-- 控制台输出 -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+            <!--格式化输出：%d表示日期，%thread表示线程名，%-5level：级别从左显示5个字符宽度%msg：日志消息，%n是换行符-->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50} %line] - %msg [%X{_REQ_ID}]%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- INFO日志信息 -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <pattern>
+                    <pattern>
+                        {"logDate":"%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}", "level":"%level", "sysCode": "${appName}", "loggerName":"%logger{50}-%line", "message":"%message", "ip":"%ip", "pid":"%thread", "requestId":"%mdc{_REQ_ID}"}
+                    </pattern>
+                </pattern>
+            </providers>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logDir}/${appName}-info-%d{yyyyMMdd}.%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>500MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- ERROR日志信息 -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <pattern>
+                    <pattern>
+                        {"logDate":"%date{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}", "level":"%level", "sysCode": "${appName}", "loggerName":"%logger{50}-%line", "message":"%message", "ip":"%ip", "pid":"%thread", "requestId":"%mdc{_REQ_ID}"}
+                    </pattern>
+                </pattern>
+                <stackTrace>
+                    <fieldNames>
+                        <stackTrace>exception</stackTrace>
+                    </fieldNames>
+                </stackTrace>
+            </providers>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${logDir}/${appName}-error-%d{yyyyMMdd}.%i.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>500MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <!-- 日志输出级别 -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="INFO_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+</configuration>

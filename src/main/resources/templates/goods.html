@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>商品管理</title>
+    <link rel="stylesheet" th:href="@{/iview/iview.css}">
+    <script th:src="@{/libs/jquery-3.2.1.min.js}" type="text/javascript"></script>
+    <script th:src="@{/libs/vue.min.js}" type="text/javascript"></script>
+    <script th:src="@{/layer/layer.js}" type="text/javascript"></script>
+    <script th:src="@{/iview/iview.min.js}" type="text/javascript"></script>
+    <script th:src="@{/common.js}" type="text/javascript"></script>
+    <style type="text/css">
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <div style="margin-bottom: 6px;margin: 30px">
+        <i-button type="info" style="" @click="add()" icon="person-add">新增</i-button>
+        <Input class = "ivu-input" v-model="keyword" placeholder="删除操作请输入秘钥" style="width: 250px" />
+    <hr>
+    <div style="margin-bottom: 6px;margin: 30px">
+        <template>
+            <i-table border :content="self" :columns="tableTitle" :data="GoodsData"></i-table>
+        </template>
+    </div>
+</div>
+<script type="text/javascript">
+    var vm = new Vue({
+        el: '#app',
+        data: {
+            content: '',
+            pageIndex: 1,
+            pageSize: 20,
+            goodsName: "",
+            GoodsData: [],
+            keyword:'',
+            tableTitle: [{
+                key: "title",
+                title: "商品名称"
+            }, {
+                key: "type",
+                title: "商品类型"
+            }, {
+                key: "price",
+                title: "商品原价"
+            }, {
+                key: "salePrice",
+                title: "商品售价"
+            }, {
+                key: "store",
+                title: "商品库存"
+            }, {
+                key: "description",
+                title: "商品描述"
+            }, {
+                title: '操作',
+                key: 'action',
+                width: 300,
+                align: 'left',
+                render: function (h, params) {
+                    var functionList = [];
+                    var edit = h('Button', {
+                        props: {
+                            type: 'primary',
+                            size: 'small',
+                            icon: 'edit'
+                        },
+                        style: {
+                            marginRight: '8px'
+                        },
+                        on: {
+                            click: function () {
+                                vm.edit(params.row);
+                            }
+                        }
+                    }, '修改');
+                    functionList.push(edit);
+                    var remove = h('Button', {
+                        props: {
+                            type: 'primary',
+                            size: 'small',
+                            icon: 'close'
+                        },
+                        style: {
+                            marginRight: '8px'
+                        },
+                        on: {
+                            click: function () {
+                                vm.remove(params.row.id);
+                            }
+                        }
+                    }, '删除');
+                    functionList.push(remove);
+                    // 返回方法集合
+                    return h('div', functionList);
+                }
+            }]
+
+        },
+        methods: {
+            //任务列表(自行实现分页)
+            list: function () {
+                $.ajax({
+                    url: "../shop/goods",
+                    type: "get",
+                    data: {"pageIndex": this.pageIndex, 'pageSize': this.pageSize},
+                    success: function (result) {
+                        vm.GoodsData = result.result;
+                    }
+                });
+            },
+            //新建商品
+            add: function () {
+                dialogOpen({
+                    title: '新增',
+                    url: '/api/managerPage/addGoodsPage',
+                    //屏幕小 滚动条显示
+                    scroll: true,
+                    width: '450px',
+                    height: '450px',
+                    yes: function (iframeId) {
+                        top.frames[iframeId].vm.acceptClick();
+                    },
+                });
+            },
+            edit: function (goods) {
+                dialogOpen({
+                    title: '修改',
+                    url: '/api/managerPage/addGoodsPage',
+                    //屏幕小 滚动条显示
+                    scroll: true,
+                    width: '450px',
+                    height: '450px',
+                    success: function (iframeId) {
+                        vm.detail(goods.id,iframeId);
+                    },
+                    yes: function (iframeId) {
+                        top.frames[iframeId].vm.acceptClick();
+                    },
+                });
+            },
+            //移除商品
+            remove: function (goodsId) {
+                var that = this;
+                if(!that.keyword){
+                    top.alert("请输入秘钥");
+                    return;
+                }
+                top.layer.confirm('确定要移除商品吗？', {
+                    btn: ['确定', '取消'] //按钮
+                }, function () {
+                    $.ajax({
+                        url: "/api/manager/auth/removeGoods",
+                        type: "post",
+                        data:{"goodsId":goodsId,"keyword":that.keyword},
+                        success: function (result) {
+                            if (result > 0) {
+                                top.layer.msg('商品移除成功', {icon: 1});
+                                window.setTimeout(that.list(), 1500);
+                            }
+                        }
+                    });
+                }, function () {
+
+                });
+            },
+            detail: function (goodsId,iframeId) {
+                $.ajax({
+                    url: "/api/manager/goodsDetail",
+                    type: "get",
+                    data: {"goodsId": goodsId},
+                    success: function (result) {
+                        var resources = result.resources;
+                        for(var i=0;i<resources.length;i++){
+                            resources[i].status='finished';
+                        }
+                        top.frames[iframeId].vm.formGoods =  result;
+                    }
+                });
+            },
+
+        },
+        created: function () {
+            this.list();
+        }
+    })
+
+</script>
+</body>
+</html>
